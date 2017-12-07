@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Page Written: 7th December 2017 -->
+<!-- Page Author: Matthew Lee -->
+<!-- Support: matt@matt-lee.sg -->
+<!-- Page Purpose: To demonstrate dynamic DRM playback with skippable ads using the Bitmovin 7.4 Stable Player -->
+
+<head>
+  <meta charset="UTF-8">
+  <title>Matthew Lee - Premium Content (w/VAST and Akamai Analytics)</title>
+  <link href="//fonts.googleapis.com/css?family=Dosis" rel="stylesheet" type="text/css" />
+  <script type="text/javascript" src="https://bitmovin-a.akamaihd.net/bitmovin-player/stable/7.4/bitmovinplayer.js"></script>
+  <script type="text/javascript" src="http://79423.analytics.edgesuite.net/js/csma.js"></script>
+  <script type="text/javascript" src="AkamaiAnalytics.js"></script>
+  <style>
+    .container {
+      font-family: "Dosis";
+      color: white;
+      text-align: center;
+    }
+
+    .container a {
+      color: white;
+    }
+
+    .container h1 {
+      font: 54px/66px "Dosis";
+      margin-bottom: 22px;
+      line-height: 66px;
+    }
+
+    .container h2 {
+      font-weight: normal;
+      margin-bottom: 36px;
+      line-height: 26px;
+    }
+
+    .description {
+      width: 50%;
+      height: 50px;
+      margin: 40px auto 0;
+    }
+
+    .player-wrapper {
+      width: 50%;
+      margin-right: auto;
+      margin-left: auto;
+    }
+
+    #webserver-warning {
+      margin: 50px;
+      padding: 20px;
+      background-color: rgba(255, 0, 0, 0.5);
+      display: none;
+    }
+  </style>
+</head>
+
+<body background="http://bitmovin.matt-lee.sg/images/background.jpg">
+
+  <div class="container">
+    <h1>Bitmovin Premium Content (w/VAST and Akamai Analytics)</h1>
+    <div id="webserver-warning">
+      <div class="ca-content">
+        <h1>Unsupported Protocol</h1>
+        <h2>This file has been loaded using the unsupported "file" protocol. Please use a <a href="http://wiki.selfhtml.org/wiki/Webserver/lokal" target="_blank">
+        web server</a> and open this page using http or https.</h2>
+      </div>
+    </div>
+    <div class="content">
+      <div class="player-wrapper">
+        <div id="player">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Define Bitmovin Player Key from Bitmovin Dashboard
+    var BITMOVIN_PLAYER_KEY = '5b7bbf6c-10ef-49a3-856f-d7ed70edf350';
+    // Akamai Beacon URL (Availale from Luna -> Conigure -> Media Analytics -> Data Sources -> View -> Configuration Steps: View Steps)
+    var akamaiAnalyticsConfigUrl = 'http://ma231-r.analytics.edgesuite.net/config/beacon-xxx.xml';
+
+    (function() {
+
+      // Build Bitmovin Player configuration. DRM defined for the 3 formats DASH (Widevine & FairPlay)
+      var conf = {
+        key: BITMOVIN_PLAYER_KEY,
+        source: {
+          dash: 'http://bitmovin-ml.s3-website-ap-southeast-1.amazonaws.com/1512572842423/manifest.mpd',
+          hls: 'http://bitmovin-ml.s3-website-ap-southeast-1.amazonaws.com/1512572842423/manifest.m3u8',
+          drm: {
+            widevine: {
+              LA_URL: 'https://mywidevine.licenseserver.com/',
+              prepareMessage: function(keyMessage) {
+                return keyMessage.message;
+              }
+            },
+            playready: {
+              LA_URL: 'https://myplayready.licenseserver.com/',
+              customData: 'INSERT-YOUR-CUSTOMDATA'
+            },
+            fairplay: {
+              LA_URL: 'https://fairplay.licenseserver.com/',
+              certificateURL: 'https://fairplay.licenseserver.com/certificate-url'
+            }
+          }
+        },
+        // Define Advertising Schedule. In this case a skippable pre-roll (To be replaced by VAST tag from your ad server)
+        advertising: {
+          admessage: 'Pre Roll Advertisement',
+          schedule: {
+            'pre-roll-ad': {
+              client: 'vast',
+              offset: 'pre',
+              tag: 'https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dskippablelinear&correlator={timestamp}'
+            }
+          }
+        }
+      }
+
+      // Display Warning if Opening Locally
+      if (location.protocol === 'file:') {
+        document.getElementById('webserver-warning').style.display = 'block';
+        document.getElementById('information').style.display = 'none';
+        document.getElementById('capabilities').style.display = 'none';
+      }
+
+      // Create and Setup the Player
+      var player = bitmovin.player('player');
+
+      // Register analytics to player
+      var bitmovinAkamaiAnalytics = new AkamaiAnalytics(akamaiAnalyticsConfigUrl, player, 'user-123456');
+
+      player.setup(conf);
+
+    })();
+  </script>
+</body>
+
+</html>
