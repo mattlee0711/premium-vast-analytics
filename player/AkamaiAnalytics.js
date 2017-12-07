@@ -104,7 +104,7 @@ var AkamaiAnalytics = function(analyticsConfigUrl, player, viewerId) {
   var setConfigUrl = function(url) {
     // make sure generic api is used
     if (url.indexOf('?enableGenericAPI=1') === -1) {
-      url += '?enableGenericAPI=1&AkamaiAnalytics_debug=1';
+      url += '?enableGenericAPI=1';
     }
     window.AKAMAI_MEDIA_ANALYTICS_CONFIG_FILE_PATH = url;
   };
